@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Apenas os dois membros cadastrados pelo administrador do projeto
+    // podem ler ou modificar tarefas. Um usuário não pode adicionar a si
+    // mesmo como membro: membership é criada no Console do Firebase.
+    function memberPath(workspaceId) {
+      return /databases/$(database)/documents/workspaces/$(workspaceId)/members/$(request.auth.uid);
+    }
+    function isMember(workspaceId) {
+      return request.auth != null
+        && exists(memberPath(workspaceId))
+        && get(memberPath(workspaceId)).data.active == true;
+    }
+    function taskFields() {
+      return ['id','title','description','assignee','category','project',
+              'priority','status','dueDate','createdAt','updatedAt','completedAt','subtasks'];
+    }
+    function validTask(taskId) {
+      return request.resource.data.keys().hasOnly(taskFields())
+        && request.resource.data.keys().hasAll(['id','title','description','assignee',
+             'category','project','priority','status','dueDate','createdAt','updatedAt','subtasks'])
+        && request.resource.data.id == taskId
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 2500
+        && request.resource.data.project is string
+        && request.resource.data.project.size() <= 80
+        && request.resource.data.assignee in ['murilo','davi','both']
+        && request.resource.data.category in ['Desenvolvimento','Design','Produto','Comunicação','Gestão','Outros']
+        && request.resource.data.priority in ['low','medium','high','urgent']
+        && request.resource.data.status in ['todo','doing','done']
+        && request.resource.data.dueDate is string
+        && request.resource.data.createdAt is string
+        && request.resource.data.updatedAt is string
+        && request.resource.data.subtasks is list
+        && request.resource.data.subtasks.size() <= 60;
+    }
+    match /workspaces/{workspaceId} {
+      allow read, write: if false;
+      match /members/{userId} {
+        allow get: if isMember(workspaceId) && request.auth.uid == userId;
+        allow list, create, update, delete: if false;
+      }
+      match /tasks/{taskId} {
+        allow get, list: if isMember(workspaceId);
+        allow create, update: if isMember(workspaceId) && validTask(taskId);
+        allow delete: if isMember(workspaceId);
+      }
+      match /activity/{activityId} {
+        allow get, list: if isMember(workspaceId);
+        allow create: if isMember(workspaceId)
+          && request.resource.data.keys().hasOnly(['action','taskTitle','taskId','actor','at'])
+          && request.resource.data.keys().hasAll(['action','taskTitle','taskId','actor','at'])
+          && request.resource.data.action is string
+          && request.resource.data.taskTitle is string
+          && request.resource.data.taskTitle.size() <= 140
+          && request.resource.data.taskId is string
+          && request.resource.data.at is string
+          && request.resource.data.actor == get(memberPath(workspaceId)).data.personId;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

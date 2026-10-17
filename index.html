@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101112" />
+  <meta name="description" content="Devarity Flow: o espaço compartilhado para organizar demandas, dividir responsabilidades e fazer acontecer." />
+  <title>Flow | Devarity Workspace</title>
+  <link rel="icon" href="https://devarity.com.br/assets/devarity-favicon.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700;750&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://devarity.com.br" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"><div class="ambient-orb"></div><div class="ambient-grid"></div></div>
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-area">
+        <a href="#inicio" class="brand" aria-label="Devarity Flow, início">
+          <span class="brand-mark"><img src="https://devarity.com.br/assets/devarity-logo-white.png" alt="" width="54" height="54" class="devarity-logo" decoding="async" /></span>
+          <span class="brand-copy"><strong>devarity<span class="brand-dot">.</span></strong><small>flow / workspace</small></span>
+        </a>
+        <button class="icon-btn mobile-close" id="sidebarClose" aria-label="Fechar menu" type="button"><span data-icon="x"></span></button>
+      </div>
+      <div class="workspace-pill"><span class="workspace-glyph"><img src="https://devarity.com.br/assets/devarity-logo-white.png" alt="" width="31" height="31" class="workspace-logo" decoding="async" /></span><span><strong>Workspace</strong><small>Equipe Devarity</small></span><span class="pill-chevrons" data-icon="chevrons-up-down"></span></div>
+      <nav class="sidebar-nav" aria-label="Navegação principal">
+        <p class="nav-label">ESPAÇO DE TRABALHO</p>
+        <button class="nav-item is-active" data-view="overview" type="button"><span data-icon="layout-dashboard"></span><span>Visão geral</span><span class="nav-shortcut">G</span></button>
+        <button class="nav-item" data-view="tasks" type="button"><span data-icon="list-todo"></span><span>Todas as tarefas</span><span class="nav-count" id="navOpenCount">0</span></button>
+        <button class="nav-item" data-view="board" type="button"><span data-icon="columns-3"></span><span>Quadro Kanban</span></button>
+        <button class="nav-item" data-view="deadlines" type="button"><span data-icon="calendar-days"></span><span>Calendário de prazos</span></button>
+        <button class="nav-item" data-view="completed" type="button"><span data-icon="check-check"></span><span>Concluídas</span></button>
+        <p class="nav-label nav-label-team">POR RESPONSÁVEL</p>
+        <button class="nav-item person-nav" data-person="murilo" type="button"><span class="avatar avatar-murilo avatar-small">M</span><span data-person-name="murilo">Murilo</span><span class="nav-count" id="personCountMurilo">0</span></button>
+        <button class="nav-item person-nav" data-person="davi" type="button"><span class="avatar avatar-davi avatar-small">D</span><span data-person-name="davi">Davi</span><span class="nav-count" id="personCountDavi">0</span></button>
+        <p class="nav-label nav-label-team">CATEGORIAS</p>
+        <div id="categoryNav" class="category-nav"></div>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="sidebar-quote"><span class="mini-sparkle" data-icon="sparkles"></span><span>Pequenos avanços.<br />Grandes entregas.</span><span class="quote-line"></span></div>
+        <button class="profile-button" id="profileButton" type="button" title="Configurações e preferências"><span class="avatar avatar-murilo" id="profileAvatar">M</span><span class="profile-text"><strong id="profileName">Murilo</strong><small id="profileSubtitle">Modo local</small></span><span data-icon="settings-2"></span></button>
+      </div>
+    </aside>
+    <div class="mobile-scrim" id="mobileScrim"></div>
+    <div class="shell">
+      <header class="topbar">
+        <div class="topbar-start"><button class="icon-btn mobile-menu" id="mobileMenu" aria-label="Abrir menu" type="button"><span data-icon="menu"></span></button><span class="topbar-parent">Workspace</span><span class="breadcrumb-slash">/</span><strong id="breadcrumbLabel">Visão geral</strong></div>
+        <div class="topbar-end"><span class="top-date" id="todayLabel"></span><span class="topbar-separator"></span><button class="sync-state" id="syncButton" type="button"><span class="sync-dot"></span><span id="syncText">Modo local</span></button><span class="topbar-separator"></span><button class="sound-toggle icon-btn" id="soundButton" type="button" title="Ativar sons" aria-label="Ativar sons"><span data-icon="volume-x"></span></button><div class="team-avatars" title="Murilo e Davi"><span class="avatar avatar-murilo">M</span><span class="avatar avatar-davi">D</span></div></div>
+      </header>
+      <main id="mainContent" class="main-content" tabindex="-1">
+        <section class="intro" id="intro">
+          <div class="intro-copy"><div class="intro-overline"><span class="overline-line"></span><span id="introOverline">SEU CENTRO DE COMANDO</span></div><h1 id="pageTitle">Tudo em seu <em>devido lugar.</em></h1><p id="pageSubtitle">Uma visão clara do que importa. Cada demanda, cada responsável, cada entrega.</p></div>
+          <div class="intro-action"><button class="primary-button" id="addTaskTop" type="button"><span data-icon="plus"></span><span>Nova tarefa</span><kbd>N</kbd></button><span class="intro-action-note">Uma ideia vira ação aqui <span data-icon="arrow-up-right"></span></span></div>
+        </section>
+        <div class="connection-banner" id="connectionBanner" hidden><div><span data-icon="info"></span><span>Você está no <strong>modo local</strong>. Para compartilhar tarefas em tempo real com o Davi, conecte o Firebase.</span></div><button id="connectionGuide" type="button">Ver configuração <span data-icon="arrow-up-right"></span></button></div>
+        <div class="search-row" id="searchRow"><label class="search-field"><span data-icon="search"></span><input type="search" id="globalSearch" placeholder="Buscar tarefa, projeto ou descrição..." autocomplete="off" aria-label="Buscar tarefas" /><kbd>/</kbd></label><button class="filter-btn" id="filtersButton" type="button" aria-expanded="false"><span data-icon="sliders-horizontal"></span> Filtros <span class="filter-count" id="activeFilterCount" hidden>0</span></button><button class="clear-filters" id="resetFilters" type="button" hidden>Limpar filtros</button></div>
+        <div class="filters-panel" id="filtersPanel" hidden><label>Responsável<select id="ownerFilter"><option value="all">Toda a equipe</option><option value="murilo">Murilo</option><option value="davi">Davi</option><option value="both">Ambos</option></select></label><label>Prioridade<select id="priorityFilter"><option value="all">Todas as prioridades</option><option value="urgent">Urgente</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label><label>Categoria<select id="categoryFilter"><option value="all">Todas as categorias</option></select></label><label>Demanda / projeto<select id="projectFilter"><option value="all">Todos os projetos</option></select></label><label>Ordenar por<select id="sortFilter"><option value="newest">Criação mais recente</option><option value="oldest">Criação mais antiga</option><option value="due">Prazo mais próximo</option><option value="priority">Maior prioridade</option></select></label></div>
+        <div id="viewContent" class="view-content" aria-live="polite"></div>
+        <footer class="footer"><span>DEVARITY / FLOW <span class="footer-mini-dot">●</span> BUILT TO MOVE FORWARD</span><span>Planejar é bom. Entregar é melhor.</span></footer>
+      </main>
+    </div>
+  </div>
+  <div class="drawer-scrim" id="drawerScrim" hidden></div>
+  <aside class="task-drawer" id="taskDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerHeading" aria-hidden="true">
+    <div class="drawer-header"><div><span class="drawer-overline" id="drawerOverline">NOVA DEMANDA</span><h2 id="drawerHeading">Criar tarefa</h2></div><button type="button" class="icon-btn close-drawer" id="drawerClose" aria-label="Fechar formulário"><span data-icon="x"></span></button></div>
+    <form id="taskForm" class="task-form">
+      <div class="drawer-scroll"><label class="field-label" for="taskTitle">Título da tarefa <span class="required">*</span></label><input id="taskTitle" name="title" class="field-input title-input" placeholder="O que precisamos fazer?" maxlength="120" required />
+        <label class="field-label" for="taskDescription">Descrição</label><textarea id="taskDescription" name="description" class="field-input" rows="4" maxlength="2500" placeholder="Adicione contexto, detalhes ou instruções..."></textarea>
+        <div class="fields-two"><div><label class="field-label" for="taskAssignee">Responsável</label><select id="taskAssignee" name="assignee" class="field-input"><option value="murilo">Murilo</option><option value="davi">Davi</option><option value="both">Ambos</option></select></div><div><label class="field-label" for="taskStatus">Etapa</label><select id="taskStatus" name="status" class="field-input"><option value="todo">A fazer</option><option value="doing">Em andamento</option><option value="done">Concluída</option></select></div></div>
+        <div class="fields-two"><div><label class="field-label" for="taskPriority">Prioridade</label><select id="taskPriority" name="priority" class="field-input"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option><option value="urgent">Urgente</option></select></div><div><label class="field-label" for="taskCategory">Categoria</label><select id="taskCategory" name="category" class="field-input"><option>Desenvolvimento</option><option>Design</option><option>Produto</option><option>Comunicação</option><option>Gestão</option><option>Outros</option></select></div></div>
+        <div class="fields-two"><div><label class="field-label" for="taskProject">Demanda / projeto</label><input id="taskProject" name="project" class="field-input" placeholder="Ex: Devarity Tools" maxlength="80" list="projectSuggestions" /><datalist id="projectSuggestions"></datalist></div><div><label class="field-label" for="taskDue">Data de entrega</label><input id="taskDue" name="dueDate" type="date" class="field-input date-input" /></div></div>
+        <div class="subtasks-heading"><div><span class="field-label">Checklist</span><small>Divida a tarefa em pequenas etapas</small></div><button class="text-add" type="button" id="addSubtask"><span data-icon="plus"></span> Adicionar item</button></div><div class="subtasks-list" id="subtasksList"></div>
+        <div class="drawer-meta" id="drawerMeta" hidden></div>
+        <div class="delete-inline" id="deleteInline" hidden><span>Excluir esta tarefa permanentemente?</span><div><button type="button" id="cancelDelete">Cancelar</button><button type="button" class="danger-button" id="confirmDelete">Sim, excluir</button></div></div>
+      </div>
+      <div class="drawer-footer"><button type="button" id="deleteTaskButton" class="delete-task-button" hidden><span data-icon="trash-2"></span> Excluir</button><div class="footer-actions"><button class="secondary-button" type="button" id="cancelTask">Cancelar</button><button class="primary-button save-button" id="saveTaskButton" type="submit"><span data-icon="check"></span><span id="saveTaskLabel">Criar tarefa</span></button></div></div>
+    </form>
+  </aside>
+  <div class="modal-scrim" id="settingsScrim" hidden></div>
+  <section class="settings-modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true"><div class="settings-header"><div><span class="drawer-overline">PREFERÊNCIAS</span><h2 id="settingsTitle">Seu espaço, suas regras.</h2></div><button type="button" id="closeSettings" class="icon-btn" aria-label="Fechar configurações"><span data-icon="x"></span></button></div><div class="settings-scroll">
+    <div class="settings-section"><h3>Quem está usando?</h3><p>Escolha seu perfil para filtrar rapidamente suas tarefas no modo local.</p><div class="settings-people"><button class="person-choice" data-choose-person="murilo" type="button"><span class="avatar avatar-murilo">M</span><span>Murilo</span><span data-icon="check"></span></button><button class="person-choice" data-choose-person="davi" type="button"><span class="avatar avatar-davi">D</span><span>Davi</span><span data-icon="check"></span></button></div></div>
+    <div class="settings-section"><div class="setting-line"><div><h3>Sons da interface</h3><p>Feedback delicado ao criar, concluir e interagir.</p></div><button type="button" role="switch" aria-checked="false" aria-label="Alternar sons" class="toggle-switch" id="settingsSoundToggle"><span></span></button></div></div>
+    <div class="settings-section"><h3>Seus dados</h3><p>Faça um backup das demandas em JSON ou importe tarefas no modo local.</p><div class="settings-buttons"><button type="button" class="secondary-button" id="exportButton"><span data-icon="download"></span> Exportar tarefas</button><button type="button" class="secondary-button" id="importButton"><span data-icon="upload"></span> Importar JSON</button><input type="file" id="importFile" accept="application/json,.json" hidden /></div></div>
+    <div class="settings-section"><h3>Colaboração em tempo real</h3><p id="connectionExplanation">Este site começa em modo local para você testar tudo. Para trabalhar simultaneamente com outra pessoa, configure o Firebase conforme o arquivo <code>README.md</code> incluído no ZIP.</p><div class="setup-hint"><span data-icon="shield-check"></span><span>Com Firebase, cada integrante entra com seu próprio email e senha. As tarefas são sincronizadas e protegidas por regras de acesso.</span></div><button type="button" id="signOutButton" class="secondary-button" hidden>Sair da conta</button></div>
+    <div class="settings-section reset-section" id="resetSection"><button id="resetDemo" type="button">Restaurar tarefas de exemplo</button><small>Disponível somente no modo local. Substitui os dados atuais.</small><div class="reset-confirm" id="resetConfirm" hidden><strong>Substituir as tarefas atuais pelos exemplos?</strong><div><button type="button" id="resetCancel">Cancelar</button><button type="button" id="resetProceed">Restaurar</button></div></div></div>
+  </div></section>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false"></div>
+  <div class="login-screen" id="loginScreen" hidden><div class="login-panel"><div class="login-brand"><span class="brand-mark"><img src="https://devarity.com.br/assets/devarity-logo-white.png" alt="" width="54" height="54" class="devarity-logo" decoding="async" /></span><span>devarity<span class="brand-dot">.</span> <small>flow</small></span></div><span class="login-kicker">ESPAÇO PRIVADO DA EQUIPE</span><h1>Boas ideias pedem <em>organização.</em></h1><p>Entre para acompanhar o que está acontecendo e construir junto.</p><form id="loginForm"><label for="loginEmail">Email</label><input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="username" required /><label for="loginPassword">Senha</label><input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password" required /><div class="login-error" id="loginError" role="alert" hidden></div><button type="submit" class="primary-button login-submit" id="loginSubmit">Entrar no workspace <span data-icon="arrow-right"></span></button></form><div class="login-foot">ACESSO EXCLUSIVO · DEVARITY FLOW</div></div><div class="login-aside" aria-hidden="true"><span>MAKE SPACE<br />FOR WHAT<br /><i>MATTERS.</i></span><div class="login-graphic"><div></div><div></div><div></div></div><small>PLAN THE WORK. DO THE WORK.</small></div></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
