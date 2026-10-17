@@ -31,7 +31,8 @@ const taskRow=(t,compact=false)=>`<article class="task-row ${t.status==='done'?'
 const listHtml=(tasks,compact=false)=>`<div class="task-list">${tasks.map(t=>taskRow(t,compact)).join('')}</div>`;
 const empty=(title,body,button='Criar tarefa',action='new')=>`<div class="empty-state"><div class="empty-symbol">${icon('inbox',22)}</div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p>${button?`<button data-action="${action}" type="button">${escapeHtml(button)}</button>`:''}</div>`;
 const byDue=(a,b)=>(a.dueDate||'9999-12-31').localeCompare(b.dueDate||'9999-12-31');
-const state={tasks:[],activity:[],view:'overview',filters:{owner:'all',priority:'all',category:'all',project:'all',sort:'newest'},search:'',person:localStorage.getItem('devarity-flow/person')||'murilo',sound:localStorage.getItem('devarity-flow/sound')==='true',activeTaskId:null,subtasks:[],settingsOpen:false,drawerOpen:false,menuId:null,calMonth:new Date().getMonth(),calYear:new Date().getFullYear(),busy:false,sync:'local',cloudAuthed:false};
+// Legacy preference keys preserve existing profile and sound choices after rebranding.
+const state={tasks:[],activity:[],view:'overview',filters:{owner:'all',priority:'all',category:'all',project:'all',sort:'newest'},search:'',person:localStorage.getItem('devarity-flow/person')||'murilo',sound:localStorage.getItem('devarity-flow/sound')==='true',activeTaskId:null,subtasks:[],settingsOpen:false,drawerOpen:false,menuId:null,calMonth:new Date().getMonth(),calYear:new Date().getFullYear(),busy:false,sync:'local',cloudAuthed:false,authState:'initializing'};
 let adapter=null,lastFocus=null,audioCtx=null;
 const el={view:$('#viewContent'), intro:$('#intro'),sidebar:$('#sidebar'),scrim:$('#mobileScrim'),drawer:$('#taskDrawer'),drawerScrim:$('#drawerScrim'),settings:$('#settingsModal'),settingsScrim:$('#settingsScrim'),form:$('#taskForm'),login:$('#loginScreen')};
 const navTitles={overview:['Tudo em seu','devido lugar.','Uma visão clara do que importa. Cada demanda, cada responsável, cada entrega.','Visão geral'],tasks:['Clareza em cada','tarefa.','Todas as demandas da equipe, com responsáveis e prazos em um só lugar.','Todas as tarefas'],board:['Do plano à','entrega.','Visualize o andamento e mova cada demanda para a próxima etapa.','Quadro Kanban'],deadlines:['Prazos no','radar.','O que precisa acontecer, em qual dia e com quem.','Calendário de prazos'],completed:['Feito é melhor que','perfeito.','Cada entrega merece seu espaço na história da equipe.','Concluídas']};
@@ -63,9 +64,50 @@ function openSettings(){if(state.drawerOpen)closeDrawer();lastFocus=document.act
 function closeSettings(){el.settings.classList.remove('is-open');el.settings.setAttribute('aria-hidden','true');el.settingsScrim.hidden=true;state.settingsOpen=false;document.body.style.overflow='';lastFocus?.focus?.();}
 function setPerson(person){if(!['murilo','davi'].includes(person))return;if(adapter?.mode==='cloud'){toast('No modo online, seu perfil é definido pela sua conta.',{error:true});return;}state.person=person;localStorage.setItem('devarity-flow/person',person);adapter.personId=person;$$('.person-choice').forEach(b=>b.classList.toggle('selected',b.dataset.choosePerson===person));render();sound();}
 function toggleSound(){state.sound=!state.sound;localStorage.setItem('devarity-flow/sound',String(state.sound));$('#settingsSoundToggle').setAttribute('aria-checked',String(state.sound));$('#soundButton').innerHTML=icon(state.sound?'volume-2':'volume-x');$('#soundButton').setAttribute('aria-label',state.sound?'Desativar sons':'Ativar sons');$('#soundButton').title=state.sound?'Desativar sons':'Ativar sons';if(state.sound)sound();}
-function updateSync(s,detail=''){state.sync=s;$('#syncButton').dataset.state=s;$('#syncText').textContent=s==='online'?'Sincronizado':s==='signin'?'Entrar':s==='error'?'Erro na conexão':'Modo local';$('#connectionBanner').hidden=s!=='local';$('#profileSubtitle').textContent=s==='online'?'Conectado ao time':'Modo local';if(s==='error')toast(detail||'Problema de conexão com Firebase.',{error:true});}
-function setLogin(isAuthed,message=null,user=null){state.cloudAuthed=isAuthed;el.login.hidden=isAuthed;$('#app').inert=!isAuthed;if(isAuthed&&user){state.person=user.personId;$('#loginError').hidden=true;$('#profileName').textContent=names[user.personId]||user.name||'Equipe';render();}else if(message){$('#loginError').textContent=message;$('#loginError').hidden=false;}}
-function downloadExport(){const payload={app:'Devarity Flow',version:2,exportedAt:new Date().toISOString(),tasks:state.tasks};const file=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(file);const a=document.createElement('a');a.href=url;a.download=`devarity-flow-backup-${dateKey()}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Backup exportado em JSON.');}
+function updateSync(s,detail=''){state.sync=s;$('#syncButton').dataset.state=s;$('#syncText').textContent=s==='online'?'Sincronizado':s==='signin'?'Entrar':s==='error'?'Erro na conexão':'Modo local';$('#connectionBanner').hidden=s!=='local';$('#profileSubtitle').textContent=s==='online'?'Conectado ao time':'Modo local';if(s==='error'&&state.authState==='authenticated')toast(detail||'Problema de conexão com Firebase.',{error:true});}
+let loginBusy=false, authWaitTimer=null;
+function setLoginBusy(busy){
+  loginBusy=busy;
+  const disabled=busy||state.authState!=='unauthenticated';
+  ['loginEmail','loginPassword','passwordToggle','loginSubmit'].forEach(id=>$('#'+id).disabled=disabled);
+  $('#loginForm').setAttribute('aria-busy',String(busy));
+  $('#loginSubmit').classList.toggle('is-loading',busy);
+  $('#loginSubmit .login-button-label').textContent=busy?'Entrando…':'Entrar no Workspace';
+}
+function setAuthState(next,message=null,user=null){
+  const previous=state.authState;
+  clearTimeout(authWaitTimer);state.authState=next;state.cloudAuthed=next==='authenticated';
+  document.body.dataset.auth=next;
+  $('#app').hidden=next!=='authenticated';$('#app').inert=next!=='authenticated';
+  el.login.hidden=next!=='unauthenticated';$('#authLoading').hidden=next!=='initializing';
+  $('#authLoadingMessage').textContent=message||'Verificando sua sessão com segurança.';
+  $('#authRetry').hidden=!message;$('#authProgress').hidden=!!message;
+  if(next!=='authenticated'){
+    if(state.drawerOpen)closeDrawer();if(state.settingsOpen)closeSettings();closeSidebar();
+    state.tasks=[];state.activity=[];render();
+  }
+  if(next==='initializing'&&!message){
+    authWaitTimer=setTimeout(()=>{
+      if(state.authState!=='initializing')return;
+      $('#authLoadingMessage').textContent='A conexão está demorando. Você pode tentar novamente sem encerrar sua sessão.';
+      $('#authRetry').hidden=false;$('#authProgress').hidden=true;
+    },12000);
+  }
+  if(next==='unauthenticated'){
+    $('#loginError').textContent=message||'';$('#loginError').hidden=!message;
+    if(previous==='authenticated'){$('#loginTitle').setAttribute('tabindex','-1');$('#loginTitle').focus();}
+  }
+  if(next==='authenticated'){
+    $('#loginPassword').value='';$('#loginPassword').type='password';
+    $('#passwordToggle').setAttribute('aria-pressed','false');$('#passwordToggle').setAttribute('aria-label','Mostrar senha');
+    $('#capsLockHint').hidden=true;$('#loginError').hidden=true;
+    if(user)state.person=user.personId;
+    render();
+    if(previous!=='authenticated')$('#mainContent').focus({preventScroll:true});
+  }
+  setLoginBusy(loginBusy);
+}
+function downloadExport(){const payload={app:'Devarity Workspace',version:2,exportedAt:new Date().toISOString(),tasks:state.tasks};const file=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(file);const a=document.createElement('a');a.href=url;a.download=`devarity-workspace-backup-${dateKey()}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Backup exportado em JSON.');}
 function mountEvents(){
   $$('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>changeView(b.dataset.view)));
   $$('.person-nav').forEach(b=>b.addEventListener('click',()=>{state.filters.owner=b.dataset.person;state.view='tasks';render();closeSidebar();}));
@@ -95,8 +137,45 @@ function mountEvents(){
   $('#signOutButton').addEventListener('click',async()=>{closeSettings();try{await adapter.signout();}catch(err){toast('Erro ao sair: '+err.message,{error:true});}});
   $('#mobileMenu').addEventListener('click',()=>{el.sidebar.classList.add('is-open');el.scrim.classList.add('is-visible');});$('#sidebarClose').addEventListener('click',closeSidebar);el.scrim.addEventListener('click',closeSidebar);
   document.addEventListener('click',e=>{if(!e.target.closest('.row-more-wrap')){$$('.row-dropdown').forEach(n=>n.remove());$$('.row-menu').forEach(b=>b.setAttribute('aria-expanded','false'));}});
-  document.addEventListener('keydown',e=>{if(e.key==='Tab'&&(state.drawerOpen||state.settingsOpen)){const activeRoot=state.settingsOpen?el.settings:el.drawer;const focusable=$$('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]',activeRoot).filter(item=>!item.hidden&&item.getClientRects().length);if(focusable.length){const first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}return;}const typing=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;if(e.key==='Escape'){if(state.drawerOpen)closeDrawer();else if(state.settingsOpen)closeSettings();else closeSidebar();return;}if(el.login.hidden===false)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus();return;}if(typing||e.altKey||e.ctrlKey||e.metaKey)return;if(e.key.toLowerCase()==='n'){e.preventDefault();openDrawer();}else if(e.key==='/'){e.preventDefault();$('#globalSearch').focus();}else if(e.key.toLowerCase()==='g'){changeView('overview');}});
-  $('#loginForm').addEventListener('submit',async e=>{e.preventDefault();const button=$('#loginSubmit');button.disabled=true;button.textContent='Entrando...';$('#loginError').hidden=true;try{await adapter.login($('#loginEmail').value.trim(),$('#loginPassword').value);}catch(err){const map={'auth/invalid-credential':'Email ou senha incorretos.','auth/too-many-requests':'Muitas tentativas. Aguarde um pouco e tente novamente.','auth/network-request-failed':'Falha de conexão. Verifique sua internet.'};$('#loginError').textContent=map[err.code]||'Não foi possível entrar. Verifique email, senha e a configuração do Firebase.';$('#loginError').hidden=false;}finally{button.disabled=false;button.innerHTML=`Entrar no workspace ${icon('arrow-right')}`;}});
+  document.addEventListener('keydown',e=>{if(e.key==='Tab'&&(state.drawerOpen||state.settingsOpen)){const activeRoot=state.settingsOpen?el.settings:el.drawer;const focusable=$$('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]',activeRoot).filter(item=>!item.hidden&&item.getClientRects().length);if(focusable.length){const first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}return;}const typing=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;if(e.key==='Escape'){if(state.drawerOpen)closeDrawer();else if(state.settingsOpen)closeSettings();else closeSidebar();return;}if(state.authState!=='authenticated')return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus();return;}if(typing||e.altKey||e.ctrlKey||e.metaKey)return;if(e.key.toLowerCase()==='n'){e.preventDefault();openDrawer();}else if(e.key==='/'){e.preventDefault();$('#globalSearch').focus();}else if(e.key.toLowerCase()==='g'){changeView('overview');}});
+  $('#passwordToggle').addEventListener('click',()=>{
+    const input=$('#loginPassword'),visible=input.type==='password';
+    const start=input.selectionStart,end=input.selectionEnd;
+    input.type=visible?'text':'password';
+    $('#passwordToggle').setAttribute('aria-pressed',String(visible));
+    $('#passwordToggle').setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');
+    if(start!==null)input.setSelectionRange(start,end);
+  });
+  const capsLock=e=>{$('#capsLockHint').hidden=!e.getModifierState?.('CapsLock');};
+  $('#loginPassword').addEventListener('keydown',capsLock);$('#loginPassword').addEventListener('keyup',capsLock);
+  $('#loginPassword').addEventListener('blur',()=>{$('#capsLockHint').hidden=true;});
+  ['loginEmail','loginPassword'].forEach(id=>$('#'+id).addEventListener('input',()=>{
+    $('#loginEmail').removeAttribute('aria-invalid');$('#loginPassword').removeAttribute('aria-invalid');$('#loginError').hidden=true;
+  }));
+  $('#authRetry').addEventListener('click',()=>{if(adapter?.retry)void adapter.retry();else window.location.reload();});
+  $('#loginForm').addEventListener('submit',async e=>{
+    e.preventDefault();if(loginBusy||state.authState!=='unauthenticated'||!adapter)return;
+    setLoginBusy(true);$('#loginError').hidden=true;
+    try{await adapter.login($('#loginEmail').value.trim(),$('#loginPassword').value);}
+    catch(err){
+      const credentials=['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-email'].includes(err.code);
+      const map={'auth/invalid-credential':'Email ou senha incorretos. Confira seus dados e tente novamente.','auth/wrong-password':'Email ou senha incorretos. Confira seus dados e tente novamente.','auth/user-not-found':'Email ou senha incorretos. Confira seus dados e tente novamente.','auth/invalid-email':'Informe um email válido.','auth/user-disabled':'Esta conta foi desativada. Entre em contato com a equipe.','auth/too-many-requests':'Muitas tentativas. Aguarde um pouco e tente novamente.','auth/network-request-failed':'Não foi possível conectar. Verifique sua internet e tente novamente.'};
+      $('#loginError').textContent=map[err.code]||'Não foi possível entrar. Tente novamente ou entre em contato com a equipe.';$('#loginError').hidden=false;
+      if(credentials){$('#loginEmail').setAttribute('aria-invalid','true');$('#loginPassword').setAttribute('aria-invalid','true');}
+    }finally{setLoginBusy(false);}
+  });
 }
-async function start(){const today=new Date();$('#todayLabel').textContent=today.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});$('#soundButton').innerHTML=icon(state.sound?'volume-2':'volume-x');$('#soundButton').title=state.sound?'Desativar sons':'Ativar sons';$('#soundButton').setAttribute('aria-label',state.sound?'Desativar sons':'Ativar sons');mountEvents();if(firebaseEnabled){el.login.hidden=false;$('#app').inert=true;updateSync('signin');try{adapter=await createCloudGateway({onTasks:tasks=>{state.tasks=tasks;render();},onActivity:activity=>{state.activity=activity;render();},onStatus:updateSync,onAuth:setLogin});}catch(err){$('#loginError').textContent='Não foi possível carregar o Firebase. Verifique sua conexão e as configurações do arquivo firebase-config.js. '+err.message;$('#loginError').hidden=false;updateSync('error','Falha ao iniciar Firebase.');}}else{adapter=createLocalAdapter((tasks,activity)=>{state.tasks=tasks;state.activity=activity;render();},updateSync);el.login.hidden=true;}render();}
-start().catch(err=>{console.error(err);toast('Falha ao iniciar o aplicativo. Atualize a página.',{error:true});});
+async function start(){
+  const today=new Date();$('#todayLabel').textContent=today.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+  $('#soundButton').innerHTML=icon(state.sound?'volume-2':'volume-x');$('#soundButton').title=state.sound?'Desativar sons':'Ativar sons';$('#soundButton').setAttribute('aria-label',state.sound?'Desativar sons':'Ativar sons');
+  mountEvents();setAuthState('initializing');
+  if(firebaseEnabled){
+    try{adapter=await createCloudGateway({onTasks:tasks=>{state.tasks=tasks;render();},onActivity:activity=>{state.activity=activity;render();},onStatus:updateSync,onAuth:setAuthState});}
+    catch{setAuthState('initializing','Não foi possível iniciar a conexão segura. Verifique a internet e permita o armazenamento deste site para manter sua sessão.');}
+  }else{
+    adapter=createLocalAdapter((tasks,activity)=>{state.tasks=tasks;state.activity=activity;render();},updateSync);
+    setAuthState('authenticated');
+  }
+  render();
+}
+start().catch(()=>setAuthState('initializing','Não foi possível preparar seu espaço. Tente novamente.'));

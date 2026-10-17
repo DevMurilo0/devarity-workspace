@@ -1,5 +1,6 @@
 import { firebaseConfig, workspaceId } from './firebase-config.js';
 
+// Legacy keys intentionally retained to preserve existing tasks and activity.
 const STORAGE_KEY = 'devarity-flow/tasks/v2';
 const ACTIVITY_KEY = 'devarity-flow/activity/v2';
 const DAY = 86400000;
@@ -62,30 +63,90 @@ export function createLocalAdapter(onData, onStatus) {
 /** Firebase modules load only in connected mode; the local app has no dependency. */
 export async function createCloudGateway({onTasks,onActivity,onStatus,onAuth}) {
   const BASE = 'https://www.gstatic.com/firebasejs/11.10.0/';
-  const [{initializeApp},{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut},{getFirestore,collection,doc,getDoc,onSnapshot,setDoc,deleteDoc,addDoc}] = await Promise.all([
+  const [{initializeApp,getApps,getApp},
+    {getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged,signInWithEmailAndPassword,signOut},
+    {getFirestore,collection,doc,getDocFromServer,onSnapshot,setDoc,deleteDoc,addDoc}] = await Promise.all([
     import(BASE+'firebase-app.js'),import(BASE+'firebase-auth.js'),import(BASE+'firebase-firestore.js'),
   ]);
-  const app=initializeApp(firebaseConfig);const auth=getAuth(app);const db=getFirestore(app);
-  const root=['workspaces',workspaceId];let unsubTasks=()=>{}, unsubActivity=()=>{}, currentUser=null;
-  const fail=(err)=>{console.error('[Flow/Firebase]',err);onStatus('error',err.message||'Falha de sincronização.');};
-  const observer=onAuthStateChanged(auth,async user=>{
-    unsubTasks();unsubActivity();currentUser=null;
-    if(!user){onAuth(false);onStatus('signin');return;}
-    try{
-      const member=await getDoc(doc(db,...root,'members',user.uid));
-      if (!member.exists() || member.data().active!==true || !['murilo','davi'].includes(member.data().personId)) {await signOut(auth);onAuth(false,'Essa conta ainda não foi autorizada no workspace. Configure os membros no Firebase.');return;}
-      currentUser={...member.data(), uid:user.uid, email:user.email};onAuth(true,null,currentUser);onStatus('online');
-      unsubTasks=onSnapshot(collection(db,...root,'tasks'), snap=>onTasks(snap.docs.map(d=>({...d.data(),id:d.id})).map(safeTask).filter(Boolean)),fail);
-      unsubActivity=onSnapshot(collection(db,...root,'activity'),snap=>onActivity(snap.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,80)),fail);
-    }catch(err){fail(err);onAuth(false,'Não foi possível verificar o acesso. Confira a conexão e as regras do Firebase.');}
-  },fail);
-  const addEvent=async(action,task)=>{try{await addDoc(collection(db,...root,'activity'),{action,taskTitle:task.title,taskId:task.id,actor:currentUser?.personId||'murilo',at:new Date().toISOString()});}catch(err){console.warn('Falha ao salvar atividade:',err);}};
+  const app=getApps().length?getApp():initializeApp(firebaseConfig);
+  const auth=getAuth(app), db=getFirestore(app), root=['workspaces',workspaceId];
+  // Auth already defaults to local persistence on the web. Make that policy explicit
+  // once, before observing the restored session or allowing a password sign-in.
+  await setPersistence(auth,browserLocalPersistence);
+  let currentUser=null, generation=0, stopped=false, denialMessage=null;
+  let subscriptions=[];
+  const clear=()=>{subscriptions.forEach(stop=>stop());subscriptions=[];currentUser=null;onTasks([]);onActivity([]);};
+  const validMember=snap=>snap.exists()&&snap.data().active===true&&['murilo','davi'].includes(snap.data().personId);
+  const isCurrent=(ticket,user)=>!stopped&&ticket===generation&&auth.currentUser?.uid===user.uid;
+  const accessError=()=>Object.assign(new Error('Não foi possível confirmar seu acesso. Verifique a conexão e tente novamente.'),{code:'access/network'});
+  async function serverMember(ref) {
+    let timer;
+    try{return await Promise.race([getDocFromServer(ref),new Promise((_,reject)=>{timer=setTimeout(()=>reject(accessError()),12000);})]);}
+    finally{clearTimeout(timer);}
+  }
+  function hold(message) {
+    ++generation;clear();onAuth('initializing',message);onStatus('error',message);
+  }
+  async function deny(ticket,user) {
+    if(!isCurrent(ticket,user))return;
+    denialMessage='Esta conta não tem acesso ao Devarity Workspace. Peça à equipe para verificar sua autorização.';
+    const deniedGeneration=++generation;clear();onAuth('unauthenticated',denialMessage);onStatus('signin');
+    // No asynchronous work between the generation check and starting signOut.
+    try{await signOut(auth);}catch{if(!stopped&&generation===deniedGeneration)onAuth('unauthenticated',denialMessage+' Não foi possível encerrar a sessão. Recarregue a página e tente novamente.');}
+  }
+  async function verify(user) {
+    if(stopped)return;
+    const ticket=++generation;clear();
+    if(!user){onAuth('unauthenticated',denialMessage);onStatus('signin');return;}
+    onAuth('initializing');onStatus('checking');
+    const memberRef=doc(db,...root,'members',user.uid);
+    try {
+      // A cached member must never unlock the dashboard on a new visit.
+      const member=await serverMember(memberRef);
+      if(!isCurrent(ticket,user))return;
+      if(!validMember(member)){await deny(ticket,user);return;}
+      currentUser={...member.data(),uid:user.uid,email:user.email};
+      denialMessage=null;onAuth('authenticated',null,currentUser);onStatus('online');
+      const dataError=err=>{
+        if(!isCurrent(ticket,user))return;
+        // Fail closed without destroying a potentially valid Firebase session.
+        hold(err.code==='permission-denied'?'O acesso aos dados mudou. Confirme sua autorização novamente.':'A conexão foi interrompida. Tente verificar seu acesso novamente.');
+      };
+      subscriptions.push(onSnapshot(memberRef,{includeMetadataChanges:true},snap=>{
+        if(!isCurrent(ticket,user)||snap.metadata.fromCache)return;
+        if(!validMember(snap)){void deny(ticket,user);return;}
+        const next={...snap.data(),uid:user.uid,email:user.email};
+        if(next.personId!==currentUser?.personId||next.name!==currentUser?.name){currentUser=next;onAuth('authenticated',null,currentUser);}
+      },err=>{
+        if(!isCurrent(ticket,user))return;
+        if(err.code==='permission-denied')void deny(ticket,user);
+        else dataError(err);
+      }));
+      subscriptions.push(onSnapshot(collection(db,...root,'tasks'),snap=>{
+        if(isCurrent(ticket,user))onTasks(snap.docs.map(d=>({...d.data(),id:d.id})).map(safeTask).filter(Boolean));
+      },dataError));
+      subscriptions.push(onSnapshot(collection(db,...root,'activity'),snap=>{
+        if(isCurrent(ticket,user))onActivity(snap.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,80));
+      },dataError));
+    } catch(err) {
+      if(!isCurrent(ticket,user))return;
+      if(err.code==='permission-denied'){await deny(ticket,user);return;}
+      hold('Não foi possível confirmar seu acesso. Sua sessão foi mantida. Verifique a conexão e tente novamente.');
+    }
+  }
+  const observer=onAuthStateChanged(auth,user=>{void verify(user);},()=>hold('Não foi possível recuperar sua sessão. Verifique a conexão e tente novamente.'));
+  const requireUser=()=>{if(!currentUser||auth.currentUser?.uid!==currentUser.uid)throw Error('Confirme seu acesso para continuar.');return currentUser;};
+  const addEvent=async(action,task,actor)=>{
+    try{await addDoc(collection(db,...root,'activity'),{action,taskTitle:task.title,taskId:task.id,actor,at:new Date().toISOString()});}
+    catch(err){console.warn('Falha ao salvar atividade:',err);}
+  };
   return {
     mode:'cloud',get personId(){return currentUser?.personId||'murilo';},
-    async login(email,password){await signInWithEmailAndPassword(auth,email,password);},
-    async signout(){await signOut(auth);},
-    async save(task,event='created'){if(!currentUser)throw Error('Faça login para salvar.');const safe=safeTask(task);if(!safe)throw Error('Título inválido.');await setDoc(doc(db,...root,'tasks',safe.id),safe);if(event)void addEvent(event,safe);},
-    async delete(task){if(!currentUser)throw Error('Faça login para excluir.');await deleteDoc(doc(db,...root,'tasks',task.id));void addEvent('deleted',task);},
-    stop(){unsubTasks();unsubActivity();observer();},
+    async login(email,password){denialMessage=null;await signInWithEmailAndPassword(auth,email,password);},
+    async signout(){const ticket=++generation;clear();onAuth('initializing');try{await signOut(auth);}catch(err){if(!stopped&&ticket===generation)hold('Não foi possível sair. Verifique a conexão e tente novamente.');throw err;}},
+    retry(){return verify(auth.currentUser);},
+    async save(task,event='created'){const user=requireUser();const safe=safeTask(task);if(!safe)throw Error('Título inválido.');await setDoc(doc(db,...root,'tasks',safe.id),safe);if(event&&currentUser?.uid===user.uid)void addEvent(event,safe,user.personId);},
+    async delete(task){const user=requireUser();await deleteDoc(doc(db,...root,'tasks',task.id));if(currentUser?.uid===user.uid)void addEvent('deleted',task,user.personId);},
+    stop(){stopped=true;++generation;clear();observer();},
   };
 }

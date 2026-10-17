@@ -5,10 +5,10 @@
  * regras do Firestore e das contas autorizadas (veja firebase/firestore.rules).
  */
 export const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  appId: "",
+  apiKey: "AIzaSyAFdZZDHW-eMc-E7x_rIcjvZ9HqtReyUCk",
+  authDomain: "devarity-workspace.firebaseapp.com",
+  projectId: "devarity-workspace",
+  appId: "1:790464881893:web:85b7a1540e624a8578e00c",
 };
 
 export const workspaceId = "devarity";

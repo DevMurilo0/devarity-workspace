@@ -4,23 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#101112" />
-  <meta name="description" content="Devarity Flow: o espaço compartilhado para organizar demandas, dividir responsabilidades e fazer acontecer." />
-  <title>Flow | Devarity Workspace</title>
+  <meta name="description" content="Devarity Workspace: o espaço compartilhado para organizar demandas, dividir responsabilidades e fazer acontecer." />
+  <title>Devarity Workspace</title>
   <link rel="icon" href="https://devarity.com.br/assets/devarity-favicon.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700;750&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="preconnect" href="https://devarity.com.br" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/auth.css" />
 </head>
-<body>
+<body data-auth="initializing">
   <div class="ambient" aria-hidden="true"><div class="ambient-orb"></div><div class="ambient-grid"></div></div>
-  <div class="app" id="app">
+  <div class="app" id="app" hidden inert>
     <aside class="sidebar" id="sidebar">
       <div class="brand-area">
-        <a href="#inicio" class="brand" aria-label="Devarity Flow, início">
+        <a href="#inicio" class="brand" aria-label="Devarity Workspace, início">
           <span class="brand-mark"><img src="https://devarity.com.br/assets/devarity-logo-white.png" alt="" width="54" height="54" class="devarity-logo" decoding="async" /></span>
-          <span class="brand-copy"><strong>devarity<span class="brand-dot">.</span></strong><small>flow / workspace</small></span>
+          <span class="brand-copy"><strong>devarity<span class="brand-dot">.</span></strong><small>workspace</small></span>
         </a>
         <button class="icon-btn mobile-close" id="sidebarClose" aria-label="Fechar menu" type="button"><span data-icon="x"></span></button>
       </div>
@@ -58,7 +59,7 @@
         <div class="search-row" id="searchRow"><label class="search-field"><span data-icon="search"></span><input type="search" id="globalSearch" placeholder="Buscar tarefa, projeto ou descrição..." autocomplete="off" aria-label="Buscar tarefas" /><kbd>/</kbd></label><button class="filter-btn" id="filtersButton" type="button" aria-expanded="false"><span data-icon="sliders-horizontal"></span> Filtros <span class="filter-count" id="activeFilterCount" hidden>0</span></button><button class="clear-filters" id="resetFilters" type="button" hidden>Limpar filtros</button></div>
         <div class="filters-panel" id="filtersPanel" hidden><label>Responsável<select id="ownerFilter"><option value="all">Toda a equipe</option><option value="murilo">Murilo</option><option value="davi">Davi</option><option value="both">Ambos</option></select></label><label>Prioridade<select id="priorityFilter"><option value="all">Todas as prioridades</option><option value="urgent">Urgente</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label><label>Categoria<select id="categoryFilter"><option value="all">Todas as categorias</option></select></label><label>Demanda / projeto<select id="projectFilter"><option value="all">Todos os projetos</option></select></label><label>Ordenar por<select id="sortFilter"><option value="newest">Criação mais recente</option><option value="oldest">Criação mais antiga</option><option value="due">Prazo mais próximo</option><option value="priority">Maior prioridade</option></select></label></div>
         <div id="viewContent" class="view-content" aria-live="polite"></div>
-        <footer class="footer"><span>DEVARITY / FLOW <span class="footer-mini-dot">●</span> BUILT TO MOVE FORWARD</span><span>Planejar é bom. Entregar é melhor.</span></footer>
+        <footer class="footer"><span>DEVARITY / WORKSPACE <span class="footer-mini-dot">●</span> BUILT TO MOVE FORWARD</span><span>Planejar é bom. Entregar é melhor.</span></footer>
       </main>
     </div>
   </div>
@@ -87,7 +88,45 @@
     <div class="settings-section reset-section" id="resetSection"><button id="resetDemo" type="button">Restaurar tarefas de exemplo</button><small>Disponível somente no modo local. Substitui os dados atuais.</small><div class="reset-confirm" id="resetConfirm" hidden><strong>Substituir as tarefas atuais pelos exemplos?</strong><div><button type="button" id="resetCancel">Cancelar</button><button type="button" id="resetProceed">Restaurar</button></div></div></div>
   </div></section>
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false"></div>
-  <div class="login-screen" id="loginScreen" hidden><div class="login-panel"><div class="login-brand"><span class="brand-mark"><img src="https://devarity.com.br/assets/devarity-logo-white.png" alt="" width="54" height="54" class="devarity-logo" decoding="async" /></span><span>devarity<span class="brand-dot">.</span> <small>flow</small></span></div><span class="login-kicker">ESPAÇO PRIVADO DA EQUIPE</span><h1>Boas ideias pedem <em>organização.</em></h1><p>Entre para acompanhar o que está acontecendo e construir junto.</p><form id="loginForm"><label for="loginEmail">Email</label><input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="username" required /><label for="loginPassword">Senha</label><input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password" required /><div class="login-error" id="loginError" role="alert" hidden></div><button type="submit" class="primary-button login-submit" id="loginSubmit">Entrar no workspace <span data-icon="arrow-right"></span></button></form><div class="login-foot">ACESSO EXCLUSIVO · DEVARITY FLOW</div></div><div class="login-aside" aria-hidden="true"><span>MAKE SPACE<br />FOR WHAT<br /><i>MATTERS.</i></span><div class="login-graphic"><div></div><div></div><div></div></div><small>PLAN THE WORK. DO THE WORK.</small></div></div>
+  <section class="auth-loading" id="authLoading" aria-labelledby="authLoadingTitle">
+    <div class="auth-loading-content">
+      <img src="https://devarity.com.br/assets/devarity-logo-white.png" alt="Devarity" width="64" height="64" />
+      <span class="auth-loading-name">Devarity <span>Workspace</span></span>
+      <span class="auth-progress" id="authProgress" aria-hidden="true"></span>
+      <h1 id="authLoadingTitle">Preparando seu espaço.</h1>
+      <p id="authLoadingMessage" role="status">Verificando sua sessão com segurança.</p>
+      <button id="authRetry" class="secondary-button" type="button" hidden>Tentar novamente <span data-icon="arrow-right"></span></button>
+    </div>
+  </section>
+  <section class="login-screen" id="loginScreen" aria-labelledby="loginTitle" hidden>
+    <div class="login-panel">
+      <div class="login-brand" aria-label="Devarity Workspace">
+        <span class="brand-mark"><img src="https://devarity.com.br/assets/devarity-logo-white.png" alt="" width="54" height="54" class="devarity-logo" decoding="async" /></span>
+        <span class="brand-copy"><strong>devarity<span class="brand-dot">.</span></strong><small>workspace</small></span>
+      </div>
+      <div class="login-intro"><h1 id="loginTitle">Seu próximo<br />grande <em>passo.</em></h1><p>Um espaço para organizar ideias,<br class="login-desktop-break" /> construir junto e fazer acontecer.</p></div>
+      <form id="loginForm">
+        <div class="login-field"><label for="loginEmail">Email</label><div class="login-input-wrap"><input type="email" name="email" id="loginEmail" placeholder="voce@devarity.com.br" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" required aria-describedby="loginError" /></div></div>
+        <div class="login-field"><label for="loginPassword">Senha</label><div class="login-input-wrap"><input type="password" name="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password" required aria-describedby="capsLockHint loginError" /><button type="button" id="passwordToggle" class="password-toggle" aria-label="Mostrar senha" aria-controls="loginPassword" aria-pressed="false"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18"/></svg></button></div><p class="caps-lock-hint" id="capsLockHint" role="status" hidden>Caps Lock está ativado.</p></div>
+        <div class="login-error" id="loginError" role="alert" hidden></div>
+        <button type="submit" class="primary-button login-submit" id="loginSubmit"><span class="login-button-label">Entrar no Workspace</span><span class="login-button-arrow" data-icon="arrow-right"></span><span class="login-spinner" aria-hidden="true"></span></button>
+        <p class="login-session-note"><span data-icon="shield-check"></span>Sua sessão continua neste navegador até você sair.</p>
+      </form>
+      <p class="login-foot">Um espaço da Devarity. Feito para construir juntos.</p>
+    </div>
+    <aside class="login-aside" aria-hidden="true">
+      <div class="login-art-top"><span>DEVARITY WORKSPACE</span><span class="art-status"><i></i> IDEIAS EM MOVIMENTO</span></div>
+      <div class="login-art-title">Make space<br />for what<br /><em>matters.</em></div>
+      <div class="workspace-art">
+        <svg class="art-connections" viewBox="0 0 640 420" fill="none"><path d="M-20 275H150Q180 275 180 245V105Q180 75 210 75H660"/><path d="M-20 340H280Q310 340 310 310V190Q310 160 340 160H660"/><path d="M-20 405H410Q440 405 440 375V275Q440 245 470 245H660"/><path class="art-accent-path" d="M-20 340H280Q310 340 310 310V190Q310 160 340 160H660"/></svg>
+        <div class="art-plane art-plane-one"><span class="art-plane-label">01 <i></i> IDEIA</span><span class="art-line"></span><span class="art-line art-line-short"></span><span class="art-node"></span></div>
+        <div class="art-plane art-plane-two"><span class="art-plane-label">02 <i></i> CONSTRUÇÃO</span><span class="art-line"></span><span class="art-line art-line-short"></span><span class="art-node"></span></div>
+        <div class="art-plane art-plane-three"><span class="art-plane-label">03 <i></i> ENTREGA</span><span class="art-complete"><span data-icon="check"></span></span><span class="art-node"></span></div>
+      </div>
+      <div class="login-art-foot"><p>Boas ideias encontram direção.<br />Grandes entregas começam aqui.</p><span>PLANEJAR. CONSTRUIR. ENTREGAR.</span></div>
+    </aside>
+  </section>
+  <noscript><div class="auth-noscript">Ative o JavaScript para acessar o Devarity Workspace.</div></noscript>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
