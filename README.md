@@ -136,7 +136,8 @@ devarity-workspace/
 ├── index.html                  Interface principal
 ├── assets/
 │   ├── devarity-logo.webp       Logo interna oficial (barra lateral, seletor, login e carregamento)
-│   └── devarity-workspace-1000126143.png  Favicon exclusivo da aba
+│   ├── devarity-workspace-1000126143.png  Favicon exclusivo da aba
+│   └── devarity-workspace-og.png  Banner público de compartilhamento (1200 × 630)
 ├── css/
 │   ├── styles.css              Estilos do Workspace
 │   └── auth.css                Login, inicialização, autofill e motion
@@ -162,14 +163,19 @@ Feito para tirar ideias do papel. **Devarity Workspace.**
 
 ## Identidade visual oficial
 
-A identidade usa dois arquivos locais com finalidades distintas:
+A identidade usa três arquivos locais com finalidades distintas:
 
-- **Logo interna:** `assets/devarity-logo.webp`, usada na barra lateral, seletor Workspace, login e carregamento da autenticação. Os metadados Open Graph/Twitter também apontam para a logo, com dimensões de 720 × 572 px.
+- **Logo interna:** `assets/devarity-logo.webp`, usada na barra lateral, seletor Workspace, login e carregamento da autenticação.
 - **Favicon da aba:** `assets/devarity-workspace-1000126143.png`, usado exclusivamente em uma declaração `rel="icon"`. A URL inclui `?v=2` para invalidar o cache da declaração anterior. Não há favicons alternativos ou ícones Apple concorrentes.
+- **Banner de compartilhamento:** `assets/devarity-workspace-og.png`, PNG de 1200 × 630 px, usado exclusivamente nos metadados Open Graph/Twitter.
 
-Os arquivos não foram convertidos nem modificados. A logo mantém a transparência, as proporções e as cores originais, usando `object-fit: contain` nas caixas existentes, sem alterar layout, espaçamentos ou animações. As referências ficam no `index.html`, sem depender de JavaScript para exibir a marca durante a inicialização.
+A logo e o favicon não foram convertidos nem modificados. A logo mantém a transparência, as proporções e as cores originais, usando `object-fit: contain` nas caixas existentes, sem alterar layout, espaçamentos ou animações. As referências ficam no `index.html`, sem depender de JavaScript para exibir a marca durante a inicialização.
 
-Os metadados usam caminhos locais relativos. Ao configurar um domínio público definitivo, use a URL absoluta da logo hospedada no próprio site em `og:image` e `twitter:image`, para compatibilidade com serviços de compartilhamento que exigem URLs absolutas.
+Os metadados estão diretamente no `<head>` do HTML inicial, com URLs HTTPS absolutas de `https://devarity-workspace.vercel.app/`, canonical, título e descrição institucionais. Não dependem de JavaScript nem de login para serem lidos. O banner também é um asset estático público, separado do dashboard autenticado.
+
+O banner contém apenas a identidade institucional: logo oficial, nome do produto, frase “Ideias organizadas. Entregas em movimento.” e planos abstratos conectados. Não usa tarefas, clientes, emails, credenciais ou dados do Firebase. A composição editável está em `docs/og-banner.html`; a exportação opcional está em `docs/render-og.cjs` e está documentada em `docs/open-graph.md`.
+
+Os consumidores de Open Graph podem usar o banner em WhatsApp, Discord, Telegram, Facebook e LinkedIn; o X recebe `twitter:card="summary_large_image"`. A aparência final e o tempo de atualização dependem de cada plataforma e de seu cache. A validação por user agent confirma acesso público, mas não equivale a publicar uma mensagem e testar o aplicativo real.
 
 **Conectividade:** os assets da marca são locais. As fontes DM Sans e Manrope continuam via Google Fonts, com fontes de sistema como alternativa; o Firebase continua usando o SDK remoto no modo online. Não há service worker para disponibilizar o site publicado offline. Não é necessário instalar dependências.
 

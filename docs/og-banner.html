@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1200" />
+<title>Banner de compartilhamento — Devarity Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:1200px;height:630px;background:#111214}
+.banner{position:relative;width:1200px;height:630px;overflow:hidden;color:#f3f1f7;font-family:'DM Sans',sans-serif;background:#111214}
+.brand{position:absolute;left:66px;top:51px;display:flex;align-items:center;gap:15px}
+.brand img{width:54px;height:44px;object-fit:contain}
+.wordmark{font-family:Manrope,sans-serif;font-size:29px;font-weight:800;letter-spacing:-1px}.wordmark span{color:#c6b9ff}
+.copy{position:absolute;left:68px;top:177px;z-index:2}
+h1{font-family:Manrope,sans-serif;font-size:79px;line-height:1.13;font-weight:600;letter-spacing:-3.2px;margin:0}
+h1 span{display:block;color:#c6b9ff}
+.tagline{font-size:28px;line-height:1.48;font-weight:500;letter-spacing:-.5px;margin:37px 0 0;color:#ded9e9}
+.signature{position:absolute;bottom:45px;left:70px;width:42px;height:3px;background:#b7a1f3}
+.art{position:absolute;right:0;top:0;width:548px;height:630px}
+</style>
+</head>
+<body>
+<main class="banner" aria-label="Devarity Workspace. Ideias organizadas. Entregas em movimento.">
+  <div class="brand"><img src="../assets/devarity-logo.webp" alt="" /><span class="wordmark">devarity<span>.</span></span></div>
+  <div class="copy"><h1>Devarity<span>Workspace</span></h1><p class="tagline">Ideias organizadas.<br />Entregas em movimento.</p></div>
+  <span class="signature" aria-hidden="true"></span>
+  <svg class="art" viewBox="0 0 548 630" fill="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="field" x1="106" y1="80" x2="535" y2="600" gradientUnits="userSpaceOnUse"><stop stop-color="#19171f"/><stop offset="1" stop-color="#25202f"/></linearGradient>
+      <linearGradient id="plane" x1="140" y1="220" x2="470" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="#35303f"/><stop offset="1" stop-color="#1b1922"/></linearGradient>
+      <linearGradient id="front" x1="130" y1="360" x2="420" y2="550" gradientUnits="userSpaceOnUse"><stop stop-color="#c4b4f6"/><stop offset="1" stop-color="#8b72c5"/></linearGradient>
+      <filter id="shadow" x="-50%" y="-50%" width="200%" height="220%"><feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#09090d" flood-opacity=".45"/></filter>
+    </defs>
+    <!-- Um espaço compartilhado: três planos conectados, da ideia à entrega. -->
+    <path d="M548 0H248L70 630H548V0Z" fill="url(#field)"/>
+    <g stroke="#827397" stroke-opacity=".15">
+      <path d="m198 0 350 202M141 97l407 235M102 229l446 257M66 361l466 269M27 493l237 137"/>
+      <path d="M310 0 133 630M449 0 273 630M548 142 412 630"/>
+    </g>
+    <!-- Conexões visíveis entre os planos, sem dados do dashboard. -->
+    <path d="m380 72-67 38q-17 10 0 20l104 60q18 10 0 21l-190 110q-17 10 0 20l114 66q17 10 0 20l-159 92" stroke="#8d77b9" stroke-width="2"/>
+    <path d="m490 190-63 37m-104 218-83 48" stroke="#c6b9ff" stroke-opacity=".45" stroke-width="2"/>
+    <!-- Os planos retomam os ângulos da composição do login. -->
+    <g filter="url(#shadow)">
+      <path d="m284 123 194 112q8 5 0 10L300 348q-8 5-16 0L90 236q-8-5 0-10l178-103q8-5 16 0Z" fill="#201e28" stroke="#62556f"/>
+      <path d="m284 123 194 112q8 5 0 10L300 348q-8 5-16 0L90 236q-8-5 0-10l178-103q8-5 16 0Z" transform="translate(6 95)" fill="url(#plane)" stroke="#8b76a9"/>
+      <path d="m284 123 194 112q8 5 0 10L300 348q-8 5-16 0L90 236q-8-5 0-10l178-103q8-5 16 0Z" transform="translate(12 190)" fill="url(#front)" stroke="#ddcffb"/>
+    </g>
+    <g stroke-linecap="round">
+      <path d="m277 159 125 72m-149-58 83 48" stroke="#77688b" stroke-width="5"/>
+      <path d="m283 255 125 72m-149-58 83 48" stroke="#b6a3d3" stroke-width="5"/>
+      <path d="m264 384 26 40 66-38" stroke="#30243f" stroke-width="7" stroke-linejoin="round"/>
+      <path d="m167 421 48 28m-24-14 0 55" stroke="#e1d5fa" stroke-opacity=".45"/>
+    </g>
+    <g fill="#cdbcf2"><circle cx="380" cy="72" r="4"/><circle cx="182" cy="519" r="4"/></g>
+    <path d="m503 512-36 21m18-31v41" stroke="#9d87c6" stroke-opacity=".5"/>
+  </svg>
+</main>
+</body>
+</html>
