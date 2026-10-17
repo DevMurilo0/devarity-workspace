@@ -135,10 +135,8 @@ Suba o conteúdo da pasta `devarity-workspace` para Netlify, Cloudflare Pages ou
 devarity-workspace/
 ├── index.html                  Interface principal
 ├── assets/
-│   ├── 1000126143.png           Imagem original da identidade oficial (preservada)
-│   ├── devarity-workspace-1000126143.png  Versão otimizada de 512 × 512
-│   └── icons/                  Favicons PNG de 16/32 px e ícone Apple de 180 px
-├── favicon.ico                 Fallback com tamanhos 16/32/48 px
+│   ├── devarity-logo.webp       Logo interna oficial (barra lateral, seletor, login e carregamento)
+│   └── devarity-workspace-1000126143.png  Favicon exclusivo da aba
 ├── css/
 │   ├── styles.css              Estilos do Workspace
 │   └── auth.css                Login, inicialização, autofill e motion
@@ -164,21 +162,22 @@ Feito para tirar ideias do papel. **Devarity Workspace.**
 
 ## Identidade visual oficial
 
-O símbolo oficial do **Devarity Workspace** vem de `assets/1000126143.png`. O original de 4096 × 4096 permanece intacto. Barra lateral, identificador do workspace, login, carregamento da autenticação e metadados Open Graph/Twitter usam a mesma cópia local otimizada de 512 × 512: `assets/devarity-workspace-1000126143.png`. As referências ficam no `index.html`, sem depender de JavaScript para exibir a marca durante a inicialização.
+A identidade usa dois arquivos locais com finalidades distintas:
 
-A imagem foi apenas redimensionada proporcionalmente, sem recortes, filtros ou alterações de cor. O fundo claro e suas texturas foram preservados para manter o contraste do símbolo preto no tema escuro. As imagens da interface usam `object-fit: contain` e dimensões reservadas para evitar deslocamentos no carregamento.
+- **Logo interna:** `assets/devarity-logo.webp`, usada na barra lateral, seletor Workspace, login e carregamento da autenticação. Os metadados Open Graph/Twitter também apontam para a logo, com dimensões de 720 × 572 px.
+- **Favicon da aba:** `assets/devarity-workspace-1000126143.png`, usado exclusivamente em uma declaração `rel="icon"`. A URL inclui `?v=2` para invalidar o cache da declaração anterior. Não há favicons alternativos ou ícones Apple concorrentes.
 
-Os favicons PNG de 16/32 px, o ícone Apple de 180 px e o `favicon.ico` de 16/32/48 px são derivados do mesmo original. Os caminhos PNG incluem o identificador da imagem e o fallback ICO tem uma versão na URL para evitar reutilizar o favicon antigo em cache. O arquivo na raiz também atende à busca automática por `/favicon.ico`. Em futuras trocas da marca, atualize os nomes/versionamento dos assets.
+Os arquivos não foram convertidos nem modificados. A logo mantém a transparência, as proporções e as cores originais, usando `object-fit: contain` nas caixas existentes, sem alterar layout, espaçamentos ou animações. As referências ficam no `index.html`, sem depender de JavaScript para exibir a marca durante a inicialização.
 
-Os metadados usam caminhos locais relativos. Ao configurar um domínio público definitivo, use a URL absoluta desse mesmo asset hospedado no próprio site em `og:image` e `twitter:image`, para compatibilidade com serviços de compartilhamento que exigem URLs absolutas.
+Os metadados usam caminhos locais relativos. Ao configurar um domínio público definitivo, use a URL absoluta da logo hospedada no próprio site em `og:image` e `twitter:image`, para compatibilidade com serviços de compartilhamento que exigem URLs absolutas.
 
 **Conectividade:** os assets da marca são locais. As fontes DM Sans e Manrope continuam via Google Fonts, com fontes de sistema como alternativa; o Firebase continua usando o SDK remoto no modo online. Não há service worker para disponibilizar o site publicado offline. Não é necessário instalar dependências.
 
-Validação da troca do símbolo:
+Validação da separação entre logo e favicon:
 
 - Chromium: carregamento, barra lateral e identificador do workspace em 320, 390, 768 e 1440 px, com escala de pixels 2×; login em 360, 390, 768, 1366 e 1920 px.
-- Quatro imagens da marca decodificadas, proporção quadrada, `object-fit: contain`, ausência de filtros, sem erros JavaScript nem falhas HTTP dos assets; favicon solicitado pelo navegador e conferido após recarga.
-- PNGs com dimensões 16/32/180 px e ICO com três tamanhos 16/32/48 px; nenhuma referência aos ícones anteriores.
+- Quatro imagens da logo WebP decodificadas, proporções preservadas com `object-fit: contain`, ausência de filtros, sem erros JavaScript nem falhas HTTP dos assets; favicon solicitado pelo navegador e conferido após recarga.
+- Uma única declaração de favicon apontando para o PNG de 512 × 512 px; nenhuma ocorrência desse PNG na interface ou nos metadados.
 - Os 15 testes de autenticação passaram com `node --experimental-vm-modules --test tests/auth.test.mjs`.
 - Regressão no navegador: tarefas, checklist, edição, conclusão, exclusão, persistência, importação/exportação, navegação e sincronização local entre abas. Login, logout, sessão restaurada, revogação e recuperação após falha de rede também passaram com o SDK de autenticação e serviços Firebase simulados, sem acessar dados de produção.
 
